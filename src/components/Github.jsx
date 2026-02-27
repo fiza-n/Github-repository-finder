@@ -1,27 +1,38 @@
+import API from "../api/api"
 import {useEffect,useState} from 'react'
 
-const Github = () => {
-    const [selectedOption,setSelectedOption] = useState("");
-    const [data,setData] = useState([]);
 
-    useEffect(() =>{
-        
-    } ,[]);
+const Github = () => {
+  const [selectedOption, setSelectedOption] = useState("");
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    if (!selectedOption.trim()) return;
 
     const fetchData = async () => {
-        const res = await fetch(`https://api.github.com/search/repositories?q=${selectedOption}`);
-        const data = await res.json();
-        setData(data.items);
-        setSelectedOption("");
-        console.log(data);
-        }
-        fetchData();
+      try {
+        const response = await API.get(
+          `/search/repositories?q=${encodeURIComponent(selectedOption)}`
+        );
 
+        setData(response.data.items);
+      } catch (error) {
+        console.log(error.response?.data);
+      }
+    };
+    console.log(data);
+
+    fetchData();
+  }, [selectedOption]); 
+  
   return (
     <div>
         Github repository finder
         <div>
             <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)}>
+                <option value="" disabled>
+                    Select a language
+                </option>
                 <option value="Javascript">JavaScript</option>
                 <option value="Python">Python</option>
                 <option value="C++">C++</option>
@@ -29,6 +40,8 @@ const Github = () => {
                 <option value="HTML">HTML</option>
             </select>
         </div>
+
+        
         </div>
   )
 }
