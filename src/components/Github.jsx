@@ -1,49 +1,148 @@
-import API from "../api/api"
-import {useEffect,useState} from 'react'
-
+import API from "../api/api";
+import { useEffect, useState } from "react";
 
 const Github = () => {
   const [selectedOption, setSelectedOption] = useState("");
   const [data, setData] = useState([]);
+  const [randomRepo, setRandomRepo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchRepositories = async () => {
     if (!selectedOption.trim()) return;
 
-    const fetchData = async () => {
-      try {
-        const response = await API.get(
-          `/search/repositories?q=${encodeURIComponent(selectedOption)}`
-        );
+    try {
+      setLoading(true);
+      setError(null);
 
-        setData(response.data.items);
-      } catch (error) {
-        console.log(error.response?.data);
+      const response = await API.get(
+        `/search/repositories?q=${encodeURIComponent(
+          selectedOption
+        )}&per_page=20`
+      );
+
+      const repos = response.data.items;
+      setData(repos);
+
+      if (repos.length > 0) {
+        const randomIndex = Math.floor(Math.random() * repos.length);
+        setRandomRepo(repos[randomIndex]);
+      } else {
+        setRandomRepo(null);
       }
-    };
-    console.log(data);
+    } catch (err) {
+      setError("Error fetching repositories");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [selectedOption]); 
-  
+  useEffect(() => {
+    fetchRepositories();
+  }, [selectedOption]);
+
+  const handleRefresh = () => {
+    if (data.length === 0) return;
+
+    let randomIndex = Math.floor(Math.random() * data.length);
+
+    if (randomRepo && data[randomIndex].id === randomRepo.id) {
+      randomIndex = (randomIndex + 1) % data.length;
+    }
+
+    setRandomRepo(data[randomIndex]);
+  };
+
   return (
-    <div>
-        Github repository finder
-        <div>
-            <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)}>
-                <option value="" disabled>
-                    Select a language
-                </option>
-                <option value="Javascript">JavaScript</option>
-                <option value="Python">Python</option>
-                <option value="C++">C++</option>
-                <option value="Typescript">Typescript</option>
-                <option value="HTML">HTML</option>
-            </select>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-6 rounded-xl shadow-md w-96">
+
+        <h2 className="text-xl font-semibold mb-4">
+          GitHub Repository Finder
+        </h2>
+
+        <select
+          value={selectedOption}
+          onChange={(e) => setSelectedOption(e.target.value)}
+          className="w-full border p-2 rounded-md mb-4"
+        >
+          <option value="" disabled>
+            Select a Language
+          </option>
+          <option value="language:javascript">JavaScript</option>
+          <option value="language:python">Python</option>
+          <option value="language:cpp">C++</option>
+          <option value="language:typescript">TypeScript</option>
+          <option value="language:html">HTML</option>
+        </select>
 
         
-        </div>
-  )
-}
+        {!selectedOption && (
+          <div className="bg-gray-200 p-6 rounded-md text-center text-gray-600">
+            Please select a language
+          </div>
+        )}
 
-export default Github
+     
+        {loading && (
+          <div className="bg-gray-200 p-6 rounded-md text-center">
+            Loading, please wait...
+          </div>
+        )}
+
+       
+        {error && (
+          <div>
+            <div className="bg-red-200 text-red-800 p-4 rounded-md text-center">
+              {error}
+            </div>
+            <button
+              onClick={fetchRepositories}
+              className="w-full bg-red-500 text-white p-2 rounded-md mt-3"
+            >
+              Click to retry
+            </button>
+          </div>
+        )}
+
+      
+       {randomRepo && !loading && !error && (
+  <div className="border p-4 rounded-md shadow-sm">
+    <h3 className="font-semibold text-lg">{randomRepo.name}</h3>
+
+    <p className="text-sm text-gray-600 mt-2">
+      {randomRepo.description || "No description available."}
+    </p>
+
+    <div className="text-sm mt-3 text-gray-700">
+      <span>{randomRepo.language}</span> |{" "}
+      <span>⭐ {randomRepo.stargazers_count}</span> |{" "}
+      <span>🍴 {randomRepo.forks_count}</span>
+    </div>
+
+    {/* Buttons */}
+    <div className="flex gap-2 mt-4">
+      <a
+        href={randomRepo.html_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 bg-blue-600 text-white text-center py-2 rounded-md hover:bg-blue-700 transition"
+      >
+        View Repository
+      </a>
+
+      <button
+        onClick={handleRefresh}
+        className="flex-1 bg-black text-white py-2 rounded-md transition cursor-pointer"
+      >
+        Refresh
+      </button>
+    </div>
+  </div>
+)}
+      </div>
+    </div>
+  );
+};
+
+export default Github;
