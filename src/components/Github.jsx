@@ -121,7 +121,7 @@ const Github = () => {
     </div>
 
     {/* Buttons */}
-    <div className="flex gap-2 mt-4">
+    <div className="flex gap-2 mt-4 max-md:flex-col">
       <a
         href={randomRepo.html_url}
         target="_blank"
